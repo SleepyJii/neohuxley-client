@@ -10,7 +10,7 @@ This simple server is meant to be self-hosted over a mesh network to handle the 
 - did I mention HACKABLE?
 
 ### current status
-Prototyping vibe-coded ActivityPub protocol
+prototyping vibe-coded ActivityPub protocol in old-school Huxley VMs
 
 ### cool features I would like to try
 
