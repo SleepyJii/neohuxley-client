@@ -1,19 +1,27 @@
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import uuid
 
+from utils.config import APP_ROOT
+from db.database import Database
+
+import json
+import os
+from pathlib import Path
+import uuid
+
 router = APIRouter()
+
 
 @router.post("/outbox/{username}")
 async def post_outbox(username: str, request: Request):
     content = await request.json()
     
-    # Build a Create activity for a Note
-    # TODO: Save object in DB
-    # TODO: Fan out to followers
     host = request.base_url.hostname
-    activity_id = f"https://{host}/activities/{str(uuid.uuid4())}"
+    activity_uuid = str(uuid.uuid4())
+    activity_id = f"https://{host}/activities/{activity_uuid}"
 
     activity = {
         "@context": "https://www.w3.org/ns/activitystreams",
@@ -32,4 +40,14 @@ async def post_outbox(username: str, request: Request):
         }
     }
 
+    Database.store(activity, username, 'outbox', _uuid=activity_uuid)
+
+    # TODO: also should presumably actually send the object wherever
+
+    # Fan out to followers?
+    # THERE WILL BE NO FOLLOWERS IN THIS DOJO
+
     return JSONResponse(content=activity, media_type="application/activity+json")
+
+
+

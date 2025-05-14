@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+set -e
+
+# Check for username argument
+if [ -z "$1" ]; then
+	echo "Usage: $0 <username>"
+	exit 1
+fi
+
+USERNAME="$1"
+
+rm -rf "users/${USERNAME}"
+rm -rf "inbox/${USERNAME}"
+rm -rf "outbox/${USERNAME}"
