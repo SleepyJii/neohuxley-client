@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+alias nhxclient="$SCRIPT_DIR/scripts/cli.sh"
+alias nhxclient-exec="$SCRIPT_DIR/scripts/exec.sh"
+alias nhxclient-launch="$SCRIPT_DIR/scripts/launch.sh"
+
+

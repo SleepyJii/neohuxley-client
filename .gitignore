@@ -4,3 +4,5 @@ __pycache__
 *.pem
 *.ssh
 *.json
+logs/*
+state/*
