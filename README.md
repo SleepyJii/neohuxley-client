@@ -1,4 +1,4 @@
-## NeoHuxley-Client (ActivityPub)
+## NeoHuxley-Client (Dockerized Tailscale + ActivityPub)
 
 This simple server is meant to be self-hosted over a mesh network to handle the self-hosters community interactions.
 
