@@ -8,11 +8,16 @@ Unfortunately Headscale does not support multiple subnets, meaning that there ca
 
 ### usage
 (2025-05-29) Easiest interfaces provided by `source script_aliases`. You'll need docker to be installed.
-For first time connection to a Headscale subnet, source `script_aliases` in the projet root and run `CLIENTNAME=$preferred_user_alias LOGIN_SERVER=http://$headscale_host_ip:8080 AUTH_KEY=$headscale_provided_key nhxclient-launch`
+For first time connection to a Headscale subnet,
+- source `script_aliases` in the project root
+- run `CLIENTNAME=$preferred_user_alias LOGIN_SERVER=http://$headscale_host_ip:8080 AUTH_KEY=$headscale_provided_key nhxclient-launch`
+- 
 The launch command will mount state dirs in the project root. This means you can kill your docker container if necessary, and in the future can skip the `AUTH_KEY` so long as you connected successfully in the first place.
 
 When the tailscale container is running, a file will be saved into project root storing the relevant docker CID. Other aliases will use this file for interacting with the container.
+
 `nhxclient $ARGS`: while the container is running this is equivalent to running `tailscale $ARGS` within the docker container, AKA can check connection status with `nhxclient status`
+
 `nhxclient-exec`: opens bash within the running docker container for poking around
 
 
