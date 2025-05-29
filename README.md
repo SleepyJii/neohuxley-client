@@ -36,6 +36,9 @@ ActivityPub is flexible enough to allow everything from simple DMs to full forum
 - did I mention HACKABLE?
 
 ### current status
+
+finish implementing! right now its half-finished
+
 prototyping vibe-coded ActivityPub protocol in old-school Huxley VMs
 
 ### cool features I would like to try
