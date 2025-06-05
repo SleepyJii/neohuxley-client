@@ -25,7 +25,11 @@ else
     --accept-routes
 fi
 
+# below command will expose host port 22 for SSH on the subnet
+# Can expose whatever other ports likewise
+socat TCP-LISTEN:22,fork TCP:host.docker.internal:22 &
 
-# launch SOCKS5 proxy
+# launch SOCKS5 proxy for host -> *.neohuxley.net
 exec sockd -f /etc/dante.conf
+
 

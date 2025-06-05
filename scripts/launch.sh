@@ -2,13 +2,15 @@
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+ROOT_DIR="$(realpath "$SCRIPT_DIR/..")"
 
 CID_FILE="$SCRIPT_DIR/../tsclient.cid"
 LOG_FILE="$SCRIPT_DIR/../logs/tsclient.log"
-STATE_DIR="$SCRIPT_DIR/../state"
+STATE_DIR="$(realpath "$SCRIPT_DIR/../state")"
+LOG_DIR="$(realpath "$SCRIPT_DIR/../logs")"
 
-# Optional: hostname override
-HOSTNAME=${CLIENT_NAME:-$(hostname)}
+echo "STATE_DIR is $STATE_DIR"
+echo "SCRIPT_DIR is $SCRIPT_DIR"
 
 # Create directories if needed
 mkdir -p "$STATE_DIR" "$SCRIPT_DIR/../logs"
@@ -17,6 +19,10 @@ mkdir -p "$STATE_DIR" "$SCRIPT_DIR/../logs"
 set -a
 source "$SCRIPT_DIR/../config/nhxclient.sh"
 set +a
+
+# Optional: hostname override
+HOSTNAME=${CLIENT_NAME:-$(hostname)}
+echo "using CLIENT_NAME $HOSTNAME"
 
 # First-time setup check
 FIRST_RUN=false
@@ -40,7 +46,7 @@ fi
 # Clean up any existing container
 docker rm -f neohuxley-client 2>/dev/null || true
 
-docker build --no-cache -t neohuxley-client:local .
+docker build --no-cache -t neohuxley-client:local $ROOT_DIR
 
 echo "🚀 Starting Tailscale client container..."
 
@@ -50,12 +56,13 @@ DOCKER_CMD=(
   --name neohuxley-client
   --cap-add=NET_ADMIN
   --device /dev/net/tun
-  -v "$PWD/$STATE_DIR:/var/lib/tailscale"
-  -v "$PWD/logs:/var/log"
+  -v "$STATE_DIR:/var/lib/tailscale"
+  -v "$LOG_DIR:/var/log"
   -e TAILSCALE_HOSTNAME="$HOSTNAME"
   -e TAILSCALE_LOGIN_SERVER="$LOGIN_SERVER"
   -e TAILSCALE_AUTH_KEY="$AUTH_KEY"
   -p 127.0.0.1:1080:1080
+  --add-host=host.docker.internal:host-gateway
 )
 
 DOCKER_CMD+=("neohuxley-client:local")

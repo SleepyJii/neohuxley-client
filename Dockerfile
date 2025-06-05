@@ -1,6 +1,7 @@
 FROM alpine:3.19
 
-RUN apk add --no-cache curl iptables ip6tables bash dante-server
+RUN apk add --no-cache curl iptables ip6tables bash dante-server socat
+
 
 # Install Tailscale 1.66.4
 RUN curl -fsSL https://pkgs.tailscale.com/stable/tailscale_1.66.4_amd64.tgz | tar -xz \
