@@ -26,4 +26,6 @@ else
 fi
 
 
-tail -f /dev/null
+# launch SOCKS5 proxy
+exec sockd -f /etc/dante.conf
+

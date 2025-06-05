@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-CID_FILE="./tsclient.cid"
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+CID_FILE="$SCRIPT_DIR/../tsclient.cid"
 
 if [[ ! -f "$CID_FILE" ]]; then
   echo "❌ No running NeoHuxley-Client cid file found."
