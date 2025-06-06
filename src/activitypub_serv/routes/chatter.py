@@ -12,20 +12,20 @@ router = APIRouter()
 db = Database()
 
 
-def create_chatter_message(sender: str, recipient: str, content: str, host: str, port: int) -> dict:
+def create_chatter_message(sender: str, recipient: str, content: str, hostname: str) -> dict:
     activity_uuid = str(uuid.uuid4())
-    activity_id = f"http://{host}:{port}/activities/{activity_uuid}"
+    activity_id = f"http://{hostname}/activities/{activity_uuid}"
 
     return {
         "@context": "https://www.w3.org/ns/activitystreams",
         "id": activity_id,
         "type": "Create",
-        "actor": f"http://{host}:{port}/users/{sender}",
+        "actor": f"http://{hostname}/users/{sender}",
         "to": [recipient],
         "object": {
             "id": f"{activity_id}#msg",
             "type": "ChatterMsg",
-            "attributedTo": f"http://{host}:{port}/users/{sender}",
+            "attributedTo": f"http://{hostname}/users/{sender}",
             "to": [recipient],
             "content": content,
             "published": datetime.utcnow().isoformat() + "Z"
@@ -44,7 +44,11 @@ async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
     sender = "host"
     host = websocket.url.hostname
     port = websocket.url.port
-    sender_uri = f"http://{host}:{port}/users/{sender}"
+    if port is not None:
+        hostname = f'{host}:{port}'
+    else:
+        hostname = host
+    sender_uri = f"http://{hostname}/users/{sender}"
     recipient_name, recipient_domain = target.split("@")
     recipient_uri = f"http://{recipient_domain}/users/{recipient_name}"
 
@@ -100,8 +104,7 @@ async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
                                     sender=sender,
                                     recipient=recipient_uri,
                                     content=result,
-                                    host=host,
-                                    port=port
+                                    hostname=hostname,
                                 )
                                 activity['chatter_origin'] = 'origin'
                                 db.insert_outbox(json.dumps(activity), activity["id"])

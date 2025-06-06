@@ -19,8 +19,9 @@ iptables -P OUTPUT ACCEPT
 # .. but Drop all tailscale0 traffic by default
 iptables -A INPUT -i tailscale0 -j  DROP
 
-# .. but Allow incoming tailscale SSH (22), HTTP (8080), and HTTPS (443) traffic
+# .. but Allow incoming tailscale SSH (22), HTTP (80 || 8080), and HTTPS (443) traffic
 iptables -A INPUT -i tailscale0 -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -i tailscale0 -p tcp --dport 80 -j ACCEPT
 iptables -A INPUT -i tailscale0 -p tcp --dport 8080 -j ACCEPT
 iptables -A INPUT -i tailscale0 -p tcp --dport 443 -j ACCEPT
 

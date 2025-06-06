@@ -46,7 +46,7 @@ fi
 # Clean up any existing container
 docker rm -f neohuxley-client 2>/dev/null || true
 
-docker build --no-cache -t neohuxley-client:local $ROOT_DIR
+docker build -t neohuxley-client:local $ROOT_DIR
 
 echo "🚀 Starting Tailscale client container..."
 
