@@ -1,3 +1,5 @@
+# routes/outbox.py
+
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -5,49 +7,70 @@ from datetime import datetime
 import uuid
 
 from utils.config import APP_ROOT
+from utils.create_note_activity import create_note_activity
 from db.database import Database
+from workers.outbox_worker import delivery_queue
+from events.event_router import event_router
 
 import json
 import os
 from pathlib import Path
 import uuid
 
+
 router = APIRouter()
+db = Database()
+
+
+def _validate(data):
+    _EXP_KEYS = ['@context', 'type', 'actor', 'to', 'object']
+    _EXP_OBJ_KEYS = ['type', 'content', 'to']
+    for k in _EXP_KEYS:
+        if k not in data.keys():
+            raise Exception(f'expected response key `{k}`')
+    if type(data['object']) is not dict:
+        raise Exception('expected `object` to be a dict')
+    for k in _EXP_OBJ_KEYS:
+        if k not in data['object'].keys():
+            raise Exception(f'expected object key `{k}`')
 
 
 @router.post("/outbox/{username}")
 async def post_outbox(username: str, request: Request):
-    content = await request.json()
-    
-    host = request.base_url.hostname
-    activity_uuid = str(uuid.uuid4())
-    activity_id = f"https://{host}/activities/{activity_uuid}"
 
-    activity = {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "id": activity_id,
-        "type": "Create",
-        "actor": f"https://{host}/users/{username}",
-        "published": datetime.utcnow().isoformat() + "Z",
-        "to": ["https://www.w3.org/ns/activitystreams#Public"],
-        "object": {
-            "id": f"{activity_id}#note",
-            "type": "Note",
-            "attributedTo": f"https://{host}/users/{username}",
-            "content": content.get("content", ""),
-            "published": datetime.utcnow().isoformat() + "Z",
-            "to": ["https://www.w3.org/ns/activitystreams#Public"]
-        }
-    }
+    if not db.check_user(username):
+        return JSONResponse(status_code=404, content={"error": "User not found"})
 
-    Database.store(activity, username, 'outbox', _uuid=activity_uuid)
+    data = await request.json()
+    try:
+        _validate(data)
+    except Exception as e:
+        return JSONResponse(status_code=400, content={'error': str(e)})
 
-    # TODO: also should presumably actually send the object wherever
+    if 'id' not in data:
+        # server MUST generate if missing, apparently
+        data['id'] = str(uuid.uuid4())
+    activity_id = data['id']
 
-    # Fan out to followers?
-    # THERE WILL BE NO FOLLOWERS IN THIS DOJO
+    db.insert_outbox(json.dumps(data), activity_id)
 
-    return JSONResponse(content=activity, media_type="application/activity+json")
+    await event_router.publish('outbox', dict(id=activity_id))
+
+    return JSONResponse(content=data, media_type="application/activity+json")
+
+
+# expected like
+#{
+#  "@context": "https://www.w3.org/ns/activitystreams",
+#  "type": "Create",
+#  "actor": "https://example.com/users/alice",
+#  "to": ["https://remote.social/users/bob"],
+#  "object": {
+#    "type": "Note",
+#    "content": "Hello world!",
+#    "to": ["https://remote.social/users/bob"]
+#  }
+#}
 
 
 

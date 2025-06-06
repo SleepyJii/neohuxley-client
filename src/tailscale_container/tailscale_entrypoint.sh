@@ -1,6 +1,10 @@
 #!/bin/bash
 
 
+# setup firewall
+./container_firewall.sh
+
+
 /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state &
 
 # Wait for the Tailscale daemon to become ready
@@ -24,12 +28,5 @@ else
     --login-server "$TAILSCALE_LOGIN_SERVER" \
     --accept-routes
 fi
-
-# below command will expose host port 22 for SSH on the subnet
-# Can expose whatever other ports likewise
-socat TCP-LISTEN:22,fork TCP:host.docker.internal:22 &
-
-# launch SOCKS5 proxy for host -> *.neohuxley.net
-exec sockd -f /etc/dante.conf
 
 

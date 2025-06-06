@@ -1,5 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 cryptography
 httpx
 httpsig
+http_message_signatures

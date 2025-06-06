@@ -6,3 +6,5 @@ __pycache__
 *.json
 logs/*
 state/*
+tsclient.cid
+activitypub_chatter/

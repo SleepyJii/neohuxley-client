@@ -11,9 +11,10 @@ RUN curl -fsSL https://pkgs.tailscale.com/stable/tailscale_1.66.4_amd64.tgz | ta
 RUN mkdir -p /var/lib/tailscale /dev/net \
   && mknod /dev/net/tun c 10 200 || true
 
-# Set up entrypoint script
-COPY src/tailscale_container/tailscale_entrypoint.sh /tailscale_entrypoint.sh
+# Set up entrypoint script, all else from src/tailscale_container
+COPY src/tailscale_container/* /
 RUN chmod +x /tailscale_entrypoint.sh
+RUN chmod +x /container_firewall.sh
 
 # copy dante SOCKS5 config
 COPY config/container/dante.conf /etc/dante.conf

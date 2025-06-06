@@ -1,3 +1,4 @@
+# routes/webfinger.py
 
 from pathlib import Path
 
@@ -6,24 +7,23 @@ from fastapi.responses import JSONResponse
 from starlette.responses import RedirectResponse
 
 from utils.config import APP_ROOT
+from db.database import Database
 
 router = APIRouter()
+db = Database()
+
 
 @router.get("/.well-known/webfinger")
 async def webfinger(resource: str, request: Request):
-    # Expect resource like acct:alice@yourdomain.com
+
     if not resource.startswith("acct:"):
         return JSONResponse(status_code=400, content={"error": "Bad request"})
 
     username = resource.split("acct:")[1].split("@")[0]
     host = request.base_url.hostname
 
-    actor_pub_path = Path(APP_ROOT) / 'db' / 'users' / username / f'{username}_pub.pem'
-    if not actor_pub_path.exists():
+    if not db.check_user(username):
         return JSONResponse(status_code=404, content={"error": "User not found"})
-
-    with open(str(actor_pub_path), 'r') as f:
-        public_key = f.read()
 
     data = {
         "subject": f"acct:{username}@{host}",
@@ -31,7 +31,7 @@ async def webfinger(resource: str, request: Request):
             {
                 "rel": "self",
                 "type": "application/activity+json",
-                "href": f"https://{host}/users/{username}"
+                "href": f"http://{host}/users/{username}"
             }
         ]
     }
