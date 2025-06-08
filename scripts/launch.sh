@@ -12,6 +12,29 @@ CID_FILE="$STATE_DIR/container.cid"
 echo "STATE_DIR is $STATE_DIR"
 echo "SCRIPT_DIR is $SCRIPT_DIR"
 
+function container_status() {
+    if [[ -f "$CID_FILE" ]]; then
+        CID=$(cat "$CID_FILE")
+        if docker ps -q --no-trunc | grep -q "$CID"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Helper: get container CID or error
+function get_cid() {
+    if [[ -f "$CID_FILE" ]]; then
+        cat "$CID_FILE"
+    else
+        exit 1
+    fi
+}
+if container_status; then
+    echo "🛑 launch blocked, because nhxclient container $CID is still alive"
+    exit 1
+fi
+
 # Create directories if needed
 mkdir -p "$STATE_DIR" "$SCRIPT_DIR/../logs"
 
