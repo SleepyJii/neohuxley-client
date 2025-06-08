@@ -24,8 +24,6 @@ All state is stored at `$CHECKOUT_PATH/state` (including ActivityPub sqlite DB)
 
 All logs stored at `$CHECKOUT_PATH/logs`
 
-`nhxclient $ARGS`: while the container is running this is equivalent to running `tailscale $ARGS` within the docker container, AKA can check connection status with `nhxclient status`
-
 ## Tailscale Docker Container
 ### motivation
 It is assumed that the target mesh network will be done via Headscale.
