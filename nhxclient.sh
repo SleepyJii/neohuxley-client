@@ -68,7 +68,7 @@ case "$1" in
     shift
     "$SCRIPT_DIR/scripts/exec.sh" tailscale "$@"
     ;;
-  ""|status)
+  status)
     echo -e "\n🌐 \e[1mNeoHuxley Client Status\e[0m\n"
     if container_status; then
         echo -e "✅ Docker container \e[32mrunning\e[0m (CID: $(get_cid))"

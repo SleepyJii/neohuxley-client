@@ -6,7 +6,7 @@ This project is meant to contain everything necessary for on-the-fly membership 
 For first time setup (assuming linux or WSL),
 - install docker
 - source `nhxclient.sh` in the project root
-- edit `nhxclient.config` with whatever short alias you want for your computer
+- edit `nhxclient.config` with whatever short alias you want your computer to have in neohuxley.net
 - talk to whoever is running the Headscale server and get an `$AUTH_KEY`
 - run `AUTH_KEY=$AUTH_KEY nhxclient launch`
 - Docker container will build and run in background. You can now do `nhxclient kill` to shutdown and `nhxclient launch` to restart freely without auth or state loss.
@@ -15,8 +15,9 @@ After first time setup,
 - `nhxclient` or `nhxclient status` will show container status and print usage hints
 - `nhxclient launch` to launch if container is dead, `nhxclient kill` to kill container
 - `nhxclient shell` opens interactive bash in the container, `nhxclient shell $CMD` runs commands directly
-- `nhxclient chatter host@{$SOME_USER_ALIAS}.neohuxley.net` will let you send chat messages to other users in a TUI
-  - They will recieve messages so long as they are connected to the network at the time, even if not in the TUI themselves
+- `nhxclient chatter $SOME_HOST_ALIAS` will let you send chat messages to other users in a TUI
+  - You can find host aliases as 2nd column in Tailscale Status (via `nhxclient status`)
+  - They will recieve messages so long as their activitypub server is connected to the network at the time, even if not in the TUI themselves
   - Messages and chat history visible whenever opening `nhxclient chatter` with the relevant person
 
 All state is stored at `$CHECKOUT_PATH/state` (including ActivityPub sqlite DB)
