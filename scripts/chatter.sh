@@ -40,6 +40,7 @@ fi
 TARGET_ARG="--target=$RAW_TARGET"
 echo $TARGET_ARG
 HOST_ARG="--host=${TS_HOSTNAME}.neohuxley.net"
+echo $HOST_ARG
 
 
 exec "$SCRIPT_DIR/exec.sh" "/chatter" "$HOST_ARG" "$TARGET_ARG"

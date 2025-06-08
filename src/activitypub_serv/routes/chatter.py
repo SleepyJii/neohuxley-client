@@ -4,8 +4,10 @@ from db.database import Database
 import uuid
 from datetime import datetime
 import json
+import socket
 import contextlib
 import asyncio
+
 
 
 router = APIRouter()
@@ -40,14 +42,23 @@ def create_chatter_message(sender: str, recipient: str, content: str, hostname: 
 @router.websocket("/chatter")
 async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
     await websocket.accept()
-
+    print(f"connected to {websocket.url}")
+    
     localactor = "host"
     host = websocket.url.hostname
+    host_ip = socket.gethostbyname(host)
     port = websocket.url.port
     if port is not None:
         hostname = f'{host}:{port}'
     else:
         hostname = host
+
+    client_ip = websocket.client.host
+    if client_ip != host_ip:
+        print(f"Rejected WebSocket from non-localhost: {client_ip} vs {host_ip}")
+        await websocket.close(code=1008)
+        return
+
     localactor_uri = f"http://{hostname}/users/{localactor}"
     remoteactor, remoteactor_domain = target.split("@")
     remoteactor_uri = f"http://{remoteactor_domain}/users/{remoteactor}"
