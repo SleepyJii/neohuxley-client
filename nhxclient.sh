@@ -35,6 +35,16 @@ function get_tailscale_status() {
     docker exec "$CID" tailscale status 2>/dev/null
 }
 
+function get_activitypub_status() {
+    CID=$(get_cid)
+    UVICORN_PROC=$(docker exec "$CID" pgrep -af "uvicorn.*activitypub_server:app")
+    if [[ -n "$UVICORN_PROC" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 
 # Command router
 case "$1" in
@@ -64,6 +74,13 @@ case "$1" in
         echo -e "✅ Docker container \e[32mrunning\e[0m (CID: $(get_cid))"
         echo -e "\n🔐 \e[1mTailscale Status\e[0m:"
         get_tailscale_status
+
+        echo -e "\n🔐 \e[1mActivityPub Status\e[0m:"
+	    if get_activitypub_status; then
+		echo -e "✅ \e[32mRunning\e[0m"
+	    else
+		echo -e "❌ \e[31mNot running\e[0m" 
+	    fi
     else
         echo -e "❌ Docker container \e[31mnot running\e[0m."
     fi

@@ -32,8 +32,13 @@ RAW_TARGET="$1"
 if [[ "$RAW_TARGET" != *@* ]]; then
     RAW_TARGET="host@$RAW_TARGET"
 fi
+# Add "*.neohuxley.net" prefix if missing 'neohuxley.net'
+if [[ "$RAW_TARGET" != *.neohuxley.net* ]]; then
+    RAW_TARGET="$RAW_TARGET.neohuxley.net"
+fi
 
 TARGET_ARG="--target=$RAW_TARGET"
+echo $TARGET_ARG
 HOST_ARG="--host=${TS_HOSTNAME}.neohuxley.net"
 
 

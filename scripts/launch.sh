@@ -96,5 +96,5 @@ DOCKER_CMD+=("neohuxley-client:local")
 # Run container and write CID
 "${DOCKER_CMD[@]}" > "$CID_FILE"
 
-echo "✅ Tailscale client launched. CID: $(cat "$CID_FILE")"
+echo "✅ NeoHuxley client launched. CID: $(cat "$CID_FILE")"
 
