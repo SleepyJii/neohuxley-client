@@ -1,5 +1,9 @@
 FROM python:3.11-alpine
 
+ARG NHXCLIENT_APPROVED_BUILD
+RUN test "$NHXCLIENT_APPROVED_BUILD" = "yes" || (echo >&2 "❌ Do not build neohuxley-client naively! Source 'script_aliases' and run 'nhxclient-launch' instead!!" && exit 1)
+
+
 RUN apk add --no-cache curl iptables ip6tables bash dante-server socat build-base libffi-dev
 
 
@@ -21,19 +25,18 @@ COPY src/activitypub_serv/ /activitypub/
 COPY src/activitypub_chatter/target/x86_64-unknown-linux-musl/release/activitypub_chatter /chatter
 RUN chmod +x /chatter
 
-# Set up entrypoint script, all else from src/tailscale_container
-COPY src/tailscale_container/* /
-RUN chmod +x /tailscale_entrypoint.sh
-RUN chmod +x /container_firewall.sh
-RUN chmod +x /setup_activitypub.sh
-
-# copy dante SOCKS5 config
-COPY config/container/dante.conf /etc/dante.conf
+# Set up entrypoint script, all else from src/container
+COPY src/container/* /
+RUN chmod +x /entrypoint.sh
+RUN chmod +x /launch_tailscale.sh
+RUN chmod +x /launch_activitypub.sh
+RUN chmod +x /setup_firewall_routing.sh
+RUN mv /dante.conf /etc/dante.conf  # dante SOCKS5 config
 
 # Handle HTTPS certificates
 COPY certs/* /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
 
-CMD /tailscale_entrypoint.sh > /var/log/tailscale.log 2>&1
+CMD /entrypoint.sh > /var/log/entrypoint.log 2>&1
 

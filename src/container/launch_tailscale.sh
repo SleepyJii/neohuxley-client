@@ -1,10 +1,3 @@
-#!/bin/bash
-
-
-# setup firewall
-./container_firewall.sh > /var/log/firewall.log 2>&1
-./setup_activitypub.sh &
-
 
 /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state &
 
@@ -30,5 +23,3 @@ else
     --accept-routes
 fi
 
-
-tail -f /dev/null

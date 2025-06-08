@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-CID_FILE="$SCRIPT_DIR/../tsclient.cid"
+CID_FILE="$SCRIPT_DIR/../state/container.cid"
 
 if [[ ! -f "$CID_FILE" ]]; then
   echo "Error: No running Tailscale container found."
@@ -36,6 +36,6 @@ fi
 TARGET_ARG="--target=$RAW_TARGET"
 HOST_ARG="--host=${TS_HOSTNAME}.neohuxley.net"
 
-# Run tailscale CLI inside the container, passing all args
-docker exec -it "$CID" "/chatter" "$HOST_ARG" "$TARGET_ARG"
+
+exec "$SCRIPT_DIR/exec.sh" "/chatter" "$HOST_ARG" "$TARGET_ARG"
 

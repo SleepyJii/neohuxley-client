@@ -4,10 +4,10 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$(realpath "$SCRIPT_DIR/..")"
 
-CID_FILE="$SCRIPT_DIR/../tsclient.cid"
 LOG_FILE="$SCRIPT_DIR/../logs/tsclient.log"
 STATE_DIR="$(realpath "$SCRIPT_DIR/../state")"
 LOG_DIR="$(realpath "$SCRIPT_DIR/../logs")"
+CID_FILE="$STATE_DIR/container.cid"
 
 echo "STATE_DIR is $STATE_DIR"
 echo "SCRIPT_DIR is $SCRIPT_DIR"
@@ -17,7 +17,7 @@ mkdir -p "$STATE_DIR" "$SCRIPT_DIR/../logs"
 
 # Source configuration files
 set -a
-source "$SCRIPT_DIR/../config/nhxclient.sh"
+source "$SCRIPT_DIR/../nhxclient.config"
 set +a
 
 # Optional: hostname override
@@ -46,9 +46,11 @@ fi
 # Clean up any existing container
 docker rm -f neohuxley-client 2>/dev/null || true
 
-docker build -t neohuxley-client:local $ROOT_DIR
+docker build -t neohuxley-client:local $ROOT_DIR --build-arg NHXCLIENT_APPROVED_BUILD=yes
 
 echo "🚀 Starting Tailscale client container..."
+# making sure $STATE_DIR/activitypub.sqlite is understood to be a file
+touch "$STATE_DIR/activitypub.sqlite"
 
 # Build Docker run command dynamically
 DOCKER_CMD=(
@@ -57,6 +59,7 @@ DOCKER_CMD=(
   --cap-add=NET_ADMIN
   --device /dev/net/tun
   -v "$STATE_DIR:/var/lib/tailscale"
+  -v "$STATE_DIR/activitypub.sqlite:/activitypub/activitypub.sqlite"
   -v "$LOG_DIR:/var/log"
   -e TAILSCALE_HOSTNAME="$HOSTNAME"
   -e TAILSCALE_LOGIN_SERVER="$LOGIN_SERVER"

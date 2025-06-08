@@ -1,7 +1,0 @@
-# putting this in /etc/systemd/resolved.conf
-
-[Resolve]
-DNS=127.0.0.1
-Domains=~neohuxley.net
-FallbackDNS=1.1.1.1
-

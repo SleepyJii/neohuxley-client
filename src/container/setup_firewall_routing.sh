@@ -39,6 +39,27 @@ iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 # send port 22 (SSH) traffic through to the docker host
 socat TCP-LISTEN:22,fork TCP:host.docker.internal:22 &
 
+
+
+## ========== SOCKS5 DANTE CONFIG ===========
+
+# this should programmatically populate the interface IP for tailscale in dante.conf
+while ! ip link show tailscale0 &>/dev/null; do
+  echo "⏳ Waiting for tailscale0 interface..."
+  sleep 1
+done
+
+while true; do
+  TAILSCALE_IP=$(ip addr show tailscale0 | grep -oE 'inet\s[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2)
+  if [ -n "$TAILSCALE_IP" ]; then
+    break
+  fi
+  echo "⏳ Waiting for Tailscale IP on tailscale0..."
+  sleep 1
+done
+echo 'tailscale0 IP resolved to ' $TAILSCALE_IP
+sed -i "s|__EXTERNAL_IP__|$TAILSCALE_IP|" /etc/dante.conf
+
 # launch SOCKS5 proxy for host -> *.neohuxley.net
 exec sockd -f /etc/dante.conf
 
