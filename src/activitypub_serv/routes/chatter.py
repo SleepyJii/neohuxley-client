@@ -20,12 +20,12 @@ def create_chatter_message(sender: str, recipient: str, content: str, hostname: 
         "@context": "https://www.w3.org/ns/activitystreams",
         "id": activity_id,
         "type": "Create",
-        "actor": f"http://{hostname}/users/{sender}",
+        "actor": sender,
         "to": [recipient],
         "object": {
             "id": f"{activity_id}#msg",
             "type": "ChatterMsg",
-            "attributedTo": f"http://{hostname}/users/{sender}",
+            "attributedTo": sender,
             "to": [recipient],
             "content": content,
             "published": datetime.utcnow().isoformat() + "Z"
@@ -41,23 +41,30 @@ def create_chatter_message(sender: str, recipient: str, content: str, hostname: 
 async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
     await websocket.accept()
 
-    sender = "host"
+    localactor = "host"
     host = websocket.url.hostname
     port = websocket.url.port
     if port is not None:
         hostname = f'{host}:{port}'
     else:
         hostname = host
-    sender_uri = f"http://{hostname}/users/{sender}"
-    recipient_name, recipient_domain = target.split("@")
-    recipient_uri = f"http://{recipient_domain}/users/{recipient_name}"
+    localactor_uri = f"http://{hostname}/users/{localactor}"
+    remoteactor, remoteactor_domain = target.split("@")
+    remoteactor_uri = f"http://{remoteactor_domain}/users/{remoteactor}"
 
     db = Database()
 
     # Send chat history
-    messages = db.get_private_messages_between(sender_uri, recipient_uri)
-    for msg in messages:
-        await websocket.send_json(json.loads(msg["data"]))
+    messages = db.get_private_messages_between(localactor_uri, remoteactor_uri)
+    for msg_row in messages:
+        msg = json.loads(msg_row['data'])
+        if (msg['actor'] == localactor_uri):
+            chat_id = 'user'
+        else:
+            chat_id = target
+        chat_content = msg.get('object', dict()).get('content', '????')
+        await websocket.send_json({'user': chat_id, 'content': chat_content})
+        #await websocket.send_json(json.loads(msg["data"]))
 
 
     user_input_queue = asyncio.Queue()
@@ -73,8 +80,8 @@ async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
     input_task = asyncio.create_task(listen_websocket_input()) # kick off input listener
 
     # Listen for both incoming and outgoing DMs
-    send_key = f"CHATTER:outb:{sender_uri}->{recipient_uri}"
-    recv_key = f"CHATTER:inb:{recipient_uri}->{sender_uri}"
+    send_key = f"CHATTER:outb:{localactor_uri}->{remoteactor_uri}"
+    recv_key = f"CHATTER:inb:{remoteactor_uri}->{localactor_uri}"
 
     async with event_router.subscription(send_key) as send_queue:
         async with event_router.subscription(recv_key) as recv_queue:
@@ -101,8 +108,8 @@ async def chatter_ws(websocket: WebSocket, target: str = Query(...)):
                             if isinstance(result, str):
                                 # Message sent from WebSocket client
                                 activity = create_chatter_message(
-                                    sender=sender,
-                                    recipient=recipient_uri,
+                                    sender=localactor_uri,
+                                    recipient=remoteactor_uri,
                                     content=result,
                                     hostname=hostname,
                                 )

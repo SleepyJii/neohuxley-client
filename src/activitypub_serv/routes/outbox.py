@@ -7,7 +7,6 @@ from datetime import datetime
 import uuid
 
 from utils.config import APP_ROOT
-from utils.create_note_activity import create_note_activity
 from db.database import Database
 from workers.outbox_worker import delivery_queue
 from events.event_router import event_router

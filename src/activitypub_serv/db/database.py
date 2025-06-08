@@ -7,7 +7,7 @@ from utils.config import APP_ROOT
 
 
 class Database:
-    def __init__(self, db_path: str = f"{APP_ROOT}/activitypub.db"):
+    def __init__(self, db_path: str = f"{APP_ROOT}/activitypub.sqlite"):
         self.db_path = Path(db_path)
         self._init_schema()
         self._ensure_host_user()
@@ -15,29 +15,42 @@ class Database:
     def _init_schema(self):
         with self.connect() as conn:
             conn.executescript("""
+            
             CREATE TABLE IF NOT EXISTS inbox (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+            
+            activity_id TEXT UNIQUE NOT NULL,
                 data TEXT NOT NULL,
+
                 received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
             CREATE TABLE IF NOT EXISTS outbox (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                activity_id TEXT UNIQUE NOT NULL,
+            
+            activity_id TEXT UNIQUE NOT NULL,
                 data TEXT NOT NULL,
+                
                 sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 delivered INTEGER DEFAULT 0,
                 delivery_error TEXT
             );
+            
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+            
                 username TEXT UNIQUE NOT NULL
             );
+            
             CREATE TABLE IF NOT EXISTS keys (
                 user_id INTEGER PRIMARY KEY,
+                
                 public_key TEXT NOT NULL,
                 private_key TEXT NOT NULL,
+                
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+
             """)
             conn.commit()
 
@@ -55,9 +68,9 @@ class Database:
         finally:
             conn.close()
 
-    def insert_inbox(self, data: str):
+    def insert_inbox(self, activity_data: str, activity_id: str):
         with self.connect() as conn:
-            conn.execute("INSERT INTO inbox (data) VALUES (?)", (data,))
+            conn.execute("INSERT INTO inbox (activity_id, data) VALUES (?, ?)", (activity_id, activity_data,))
             conn.commit()
 
     def insert_outbox(self, activity_data: str, activity_id: str):
@@ -98,22 +111,24 @@ class Database:
                 )
             conn.commit()
 
-    def get_private_messages_between(self, sender: str, recipient: str):
+    def get_private_messages_between(self, localactor: str, remoteactor: str):
         with self.connect() as conn:
             inbox_rows = conn.execute("""
-                SELECT data FROM inbox
+                SELECT data, received_at AS timestamp FROM inbox
                 WHERE json_extract(data, '$.actor') = ?
                   AND json_extract(data, '$.object.to[0]') = ?
-            """, (recipient, sender)).fetchall()
+            """, (remoteactor, localactor)).fetchall()
 
             outbox_rows = conn.execute("""
-                SELECT data FROM outbox
+                SELECT data, sent_at AS timestamp FROM outbox
                 WHERE json_extract(data, '$.actor') = ?
                   AND json_extract(data, '$.object.to[0]') = ?
-            """, (sender, recipient)).fetchall()
+                  AND delivered = 1
+            """, (localactor, remoteactor)).fetchall()
 
-            return inbox_rows + outbox_rows
-
+        # sort these by publish time before returning!!
+        res = list(sorted(inbox_rows + outbox_rows, key = lambda r: r['timestamp']))
+        return res
 
 
     def get_users(self):
@@ -159,5 +174,12 @@ class Database:
                 JOIN users u ON k.user_id = u.id
                 WHERE u.username = ?
             """, (username,)).fetchone()
-            return dict(result) if result else None
+            return dict(result) if result else dict()
+
+    def get_private_key(self, username: str):
+        return self.get_keys(username).get('private_key', None)
+
+    def get_public_key(self, username: str):
+        return self.get_keys(username).get('public_key', None)
+
 

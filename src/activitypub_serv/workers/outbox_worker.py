@@ -1,7 +1,9 @@
 import asyncio
 import json
 import httpx
+import email
 from db.database import Database
+from utils.signatures import create_signature_header
 from events.event_router import event_router
 
 db = Database()
@@ -36,9 +38,7 @@ async def resolve_inbox(actor_url: str) -> str | None:
         async with httpx.AsyncClient(verify=False, timeout=5.0) as client:
             resp = await client.get(
                     actor_url,
-                    headers={
-                        "Accept": "application/activity+json"
-                    },
+                    headers={"Accept": "application/activity+json"},
                 )
             if resp.status_code == 200:
                 data = resp.json()
@@ -59,6 +59,8 @@ async def outbox_worker():
                 continue
 
             activity = json.loads(row["data"])
+            localactor_uri = activity['actor']
+            localactor = localactor_uri[localactor_uri.rfind('/users/')+7:]
 
             inboxes = []
             for to_addr in activity['to']:
@@ -68,12 +70,23 @@ async def outbox_worker():
 
             async with httpx.AsyncClient(verify=False) as client:
                 for inbox_url in inboxes:
-                    # print(f'posting `{inbox_url}`')
+                    remoteactor_uri = inbox_url.replace('/inbox/', '/users/')
+                    remoteactor_domain = inbox_url[:inbox_url.rfind('/inbox/')]
+                    headers = {
+                        "Host": remoteactor_domain,
+                        "Date": email.utils.formatdate(usegmt=True),
+                        "Content-Type": "application/activity+json",
+                    }
+                    headers["Signature"] = create_signature_header(
+                        request_target=inbox_url,
+                        headers=headers,
+                        key_id=f"{localactor_uri}#main-key",
+                        private_key_pem=db.get_private_key(localactor)
+                    )
                     resp = await client.post(
                         inbox_url,
                         json=activity,
-                        headers={"Content-Type": "application/activity+json"},
-                        # TODO: Sign the request
+                        headers=headers,
                     )
                     if resp.status_code >= 400:
                         raise Exception(f"{resp.status_code} {resp.text}")
