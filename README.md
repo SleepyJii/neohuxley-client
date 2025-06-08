@@ -21,7 +21,9 @@ After first time setup,
 
 All state is stored at `$CHECKOUT_PATH/state` (including ActivityPub sqlite DB)
 - (...including `container.cid`, which is how scripts keep track of container - if you delete it, make sure to kill container manually)
+
 All logs stored at `$CHECKOUT_PATH/logs`
+
 `nhxclient $ARGS`: while the container is running this is equivalent to running `tailscale $ARGS` within the docker container, AKA can check connection status with `nhxclient status`
 
 ## Tailscale Docker Container
